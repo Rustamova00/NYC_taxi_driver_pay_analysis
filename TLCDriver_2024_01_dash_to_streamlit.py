@@ -1,21 +1,25 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from pathlib import Path
 
-# Load data
-df_02_2023 = pd.read_csv("data/TLCDriver_2023_02_heatmap_df.csv")
+# Load data using paths relative to this file so the app can
+# be executed from any working directory
+DATA_DIR = Path(__file__).resolve().parent / "data"
 
-df_01_2024 = pd.read_csv("data/TLCDriver_2024_01_heatmap_df.csv")
-df_02_2024 = pd.read_csv("data/TLCDriver_2024_02_heatmap_df.csv")
-df_03_2024 = pd.read_csv("data/TLCDriver_2024_03_heatmap_df.csv")
-df_04_2024 = pd.read_csv("data/TLCDriver_2024_04_heatmap_df.csv")
-df_05_2024 = pd.read_csv("data/TLCDriver_2024_05_heatmap_df.csv")
-df_06_2024 = pd.read_csv("data/TLCDriver_2024_06_heatmap_df.csv")
-df_07_2024 = pd.read_csv("data/TLCDriver_2024_07_heatmap_df.csv")
-df_08_2024 = pd.read_csv("data/TLCDriver_2024_08_heatmap_df.csv")
-df_09_2024 = pd.read_csv("data/TLCDriver_2024_09_heatmap_df.csv")
-df_10_2024 = pd.read_csv("data/TLCDriver_2024_10_heatmap_df.csv")
-df_11_2024 = pd.read_csv("data/TLCDriver_2024_11_heatmap_df.csv")
+df_02_2023 = pd.read_csv(DATA_DIR / "TLCDriver_2023_02_heatmap_df.csv")
+
+df_01_2024 = pd.read_csv(DATA_DIR / "TLCDriver_2024_01_heatmap_df.csv")
+df_02_2024 = pd.read_csv(DATA_DIR / "TLCDriver_2024_02_heatmap_df.csv")
+df_03_2024 = pd.read_csv(DATA_DIR / "TLCDriver_2024_03_heatmap_df.csv")
+df_04_2024 = pd.read_csv(DATA_DIR / "TLCDriver_2024_04_heatmap_df.csv")
+df_05_2024 = pd.read_csv(DATA_DIR / "TLCDriver_2024_05_heatmap_df.csv")
+df_06_2024 = pd.read_csv(DATA_DIR / "TLCDriver_2024_06_heatmap_df.csv")
+df_07_2024 = pd.read_csv(DATA_DIR / "TLCDriver_2024_07_heatmap_df.csv")
+df_08_2024 = pd.read_csv(DATA_DIR / "TLCDriver_2024_08_heatmap_df.csv")
+df_09_2024 = pd.read_csv(DATA_DIR / "TLCDriver_2024_09_heatmap_df.csv")
+df_10_2024 = pd.read_csv(DATA_DIR / "TLCDriver_2024_10_heatmap_df.csv")
+df_11_2024 = pd.read_csv(DATA_DIR / "TLCDriver_2024_11_heatmap_df.csv")
 # Dictionary to map months to DataFrames
 month_options = {
     "February 2023": df_02_2023,
@@ -89,9 +93,14 @@ selected_weekday = st.selectbox(
 # Filter data for the selected week number and weekday
 weekday_data = weekly_data[weekly_data['weekday'] == selected_weekday]
 
-# Create pivot table for the heatmap
+# Create pivot table for the heatmap using only the top 10 zones by total pay
 if not weekday_data.empty:
-    heatmap_pivot = weekday_data.pivot(index='Zone', columns='hour', values='driver_pay')
+    top_zones = (
+        weekday_data.groupby("Zone")["driver_pay"].sum().nlargest(10).index
+    )
+    weekday_top10 = weekday_data[weekday_data["Zone"].isin(top_zones)]
+
+    heatmap_pivot = weekday_top10.pivot(index='Zone', columns='hour', values='driver_pay')
 
     # Check if pivot table is empty
     if heatmap_pivot.empty:
